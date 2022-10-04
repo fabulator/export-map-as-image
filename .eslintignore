@@ -1,0 +1,9 @@
+!.*
+**/node_modules
+**/package-lock.json
+**/dist
+**/tsconfig.json
+**/.git
+**/.idea
+**/logs
+**/*.json
