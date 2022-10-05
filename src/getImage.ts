@@ -2,7 +2,7 @@ import { prepareDom } from './prepareDom';
 import { importLeaflet } from './importLeaflet';
 import { generateImageFromMap } from './generateImageFromMap';
 
-export const getImage = async (points: [number, number][]) => {
+export const getImage = async (points: [number, number][], { width, height }: { height: number; width: number }) => {
     prepareDom();
     const { leaflet } = await importLeaflet();
 
@@ -12,7 +12,7 @@ export const getImage = async (points: [number, number][]) => {
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
-    map._size = new leaflet.Point(768, 200);
+    map._size = new leaflet.Point(width, height);
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error

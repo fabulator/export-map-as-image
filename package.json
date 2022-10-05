@@ -5,9 +5,12 @@
   "dependencies": {
     "canvas": "^2.10.1",
     "cross-fetch": "^3.1.5",
+    "dotenv": "^16.0.3",
+    "fastify": "^4.7.0",
     "jsdom": "^20.0.1",
     "leaflet": "^1.9.2",
     "leaflet-image": "^0.4.0",
+    "pino": "^8.6.1",
     "strava-api-handler": "^9.0.1"
   },
   "devDependencies": {
