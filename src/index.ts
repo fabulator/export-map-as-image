@@ -16,7 +16,6 @@ config();
 if (
     !process.env.STRAVA_CLIENT_ID ||
     !process.env.STRAVA_CLIENT_SECRET ||
-    !process.env.STRAVA_CLIENT_ACCESS_TOKEN ||
     !process.env.STRAVA_RETURN_URL ||
     !process.env.TOKEN_PATH ||
     !process.env.CACHE_DIRECTORY
@@ -27,8 +26,6 @@ if (
 const logger = pino();
 
 const api = new Api(process.env.STRAVA_CLIENT_ID, process.env.STRAVA_CLIENT_SECRET);
-
-api.setAccessToken(process.env.STRAVA_CLIENT_ACCESS_TOKEN);
 
 export const app = fastify({ logger });
 
