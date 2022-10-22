@@ -73,7 +73,7 @@ app.get<{ Params: { activityId: string; height: string; width: string }; Queryst
     {
         handler: async (request, reply) => {
             const { activityId, height, width } = request.params;
-            const { urlTemplate } = request.query;
+            const urlTemplate = request.query.urlTemplate || process.env.TEMPLATE;
 
             const cacheKey = sanitize(`${activityId}${height}${width}${urlTemplate}`);
 
