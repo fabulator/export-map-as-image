@@ -13,8 +13,6 @@ import { api, tokenService } from './services';
 
     api.setAccessToken(token.access_token);
 
-    console.log(process.argv);
-
     const [, , activityId, width, height, urlTemplate, file] = process.argv;
 
     const stream = (await Promise.all(activityId.split(',').map((id) => api.getStream(Number(id), [Stream.LATNG])))).flat();
