@@ -1,4 +1,4 @@
-FROM node:18-alpine AS build
+FROM node:16-alpine AS build
 
 WORKDIR /srv
 COPY package*.json /srv/
@@ -9,7 +9,7 @@ COPY src /srv/src/
 RUN npm run build
 RUN npm ci --production
 
-FROM node:18-alpine
+FROM node:16-alpine
 WORKDIR /srv
 RUN apk add --no-cache cairo-dev libjpeg-turbo-dev pango
 COPY --from=build /srv/node_modules /srv/node_modules
