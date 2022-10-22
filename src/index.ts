@@ -7,6 +7,8 @@ import { pino } from 'pino';
 import { ADAPTERS, Storage } from 'storage-keeper';
 import { config } from 'dotenv';
 import { DateTime } from 'luxon';
+import sanitize from 'sanitize-filename';
+
 import { getImage } from './getImage';
 
 config();
@@ -73,7 +75,7 @@ app.get<{ Params: { activityId: string; height: string; width: string }; Queryst
             const { activityId, height, width } = request.params;
             const { urlTemplate } = request.query;
 
-            const cacheKey = `${activityId}${height}${width}${urlTemplate}`;
+            const cacheKey = sanitize(`${activityId}${height}${width}${urlTemplate}`);
 
             const token = await tokenService.get();
 

@@ -13,6 +13,7 @@
     "leaflet-image": "^0.4.0",
     "luxon": "^3.0.4",
     "pino": "^8.6.1",
+    "sanitize-filename": "^1.6.3",
     "storage-keeper": "^3.8.8",
     "strava-api-handler": "^9.0.1"
   },
