@@ -2,7 +2,7 @@ FROM node:18-alpine AS build
 
 WORKDIR /srv
 COPY package*.json /srv/
-RUN apk add --no-cache python3 py3-pip make g++ libc6-compat
+RUN apk add --no-cache python3 py3-pip make g++ libc6-compat .gyp
 RUN npm ci
 COPY tsconfig.json /srv/
 COPY src /srv/src/
