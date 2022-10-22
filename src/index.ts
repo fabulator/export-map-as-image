@@ -30,8 +30,6 @@ api.setAccessToken(process.env.STRAVA_CLIENT_ACCESS_TOKEN);
 
 export const app = fastify({ logger });
 
-const cache: any = {};
-
 const storage = new Storage(undefined, new ADAPTERS.FileAdapter(process.env.TOKEN_PATH));
 
 type Token = {
