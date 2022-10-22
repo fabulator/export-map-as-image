@@ -13,4 +13,8 @@ export const prepareDom = () => {
 
     global.L_DISABLE_3D = true;
     global.L_NO_TOUCH = true;
+
+    return () => {
+        jsdom.window.close();
+    };
 };

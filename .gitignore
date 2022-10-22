@@ -4,3 +4,4 @@ dev.js
 .idea
 .env
 fs
+dist

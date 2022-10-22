@@ -7,7 +7,7 @@ export const getImage = async (
     { width, height }: { height: number; width: number },
     urlTemplate = 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}',
 ) => {
-    prepareDom();
+    const close = prepareDom();
     const { leaflet } = await importLeaflet();
 
     global.L = leaflet;
@@ -30,5 +30,9 @@ export const getImage = async (
 
     map.fitBounds(polygon.getBounds());
 
-    return generateImageFromMap(map);
+    const response = await generateImageFromMap(map);
+
+    close();
+
+    return response;
 };

@@ -1,69 +1,22 @@
-import 'cross-fetch/polyfill';
 import path from 'path';
 import fs from 'fs';
-import { Api, Stream, ApiScope } from 'strava-api-handler';
+import { ApiScope } from 'strava-api-handler';
 import fastify from 'fastify';
 import { pino } from 'pino';
-import { ADAPTERS, Storage } from 'storage-keeper';
 import { config } from 'dotenv';
-import { DateTime } from 'luxon';
+import { fork } from 'child_process';
 import sanitize from 'sanitize-filename';
-
-import { getImage } from './getImage';
+import { api, tokenService } from './services';
 
 config();
 
-if (
-    !process.env.STRAVA_CLIENT_ID ||
-    !process.env.STRAVA_CLIENT_SECRET ||
-    !process.env.STRAVA_RETURN_URL ||
-    !process.env.TOKEN_PATH ||
-    !process.env.CACHE_DIRECTORY
-) {
+if (!process.env.STRAVA_RETURN_URL || !process.env.CACHE_DIRECTORY) {
     throw new Error('Invalid .env variables.');
 }
 
 const logger = pino();
 
-const api = new Api(process.env.STRAVA_CLIENT_ID, process.env.STRAVA_CLIENT_SECRET);
-
 export const app = fastify({ logger });
-
-const storage = new Storage(undefined, new ADAPTERS.FileAdapter(process.env.TOKEN_PATH));
-
-type Token = {
-    access_token: string;
-    expireDate: string;
-    refresh_token: string;
-};
-
-const tokenService = {
-    get: async () => {
-        const token = (await storage.get('token')) as Token;
-
-        if (!token) {
-            return undefined;
-        }
-
-        if (DateTime.fromISO(token.expireDate).minus({ minute: 5 }) < DateTime.local()) {
-            const stravaToken = await api.refreshToken(token.refresh_token);
-
-            const extendedToken = {
-                ...stravaToken,
-                expireDate: new Date(stravaToken.expires_at * 1000).toISOString(),
-            };
-
-            await tokenService.set(extendedToken);
-
-            return extendedToken;
-        }
-
-        return token;
-    },
-    set: async (token: Token) => {
-        storage.set('token', token);
-    },
-};
 
 app.get<{ Params: { activityId: string; height: string; width: string }; Querystring: { urlTemplate?: string } }>(
     '/activity/:activityId/width/:width/height/:height.png',
@@ -74,33 +27,35 @@ app.get<{ Params: { activityId: string; height: string; width: string }; Queryst
 
             const cacheKey = sanitize(`${activityId}${height}${width}${urlTemplate}`);
 
-            const token = await tokenService.get();
-
-            if (!token) {
-                throw new Error('There is no token.');
-            }
-
-            api.setAccessToken(token.access_token);
-
-            const stream = (await Promise.all(activityId.split(',').map((id) => api.getStream(Number(id), [Stream.LATNG])))).flat();
-
-            reply.header('Content-Type', 'image/png');
-
             const file = path.resolve(process.env.CACHE_DIRECTORY as string, `${cacheKey}.png`);
 
             if (fs.existsSync(file)) {
+                reply.header('Content-Type', 'image/png');
                 return fs.readFileSync(file);
             }
 
-            const image = await getImage(
-                stream.map(({ latlng }) => latlng),
-                { width: Number(width), height: Number(height) },
-                urlTemplate,
-            );
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            const child = fork(path.resolve(__dirname, './exportImage.js'), [activityId, width, height, urlTemplate, file]);
 
-            fs.writeFileSync(file, image);
+            child.on('error', (m) => {
+                console.error(m);
+            });
 
-            return image;
+            child.on('message', (m) => {
+                console.log(m);
+            });
+
+            await new Promise((resolve) => {
+                child.on('exit', resolve);
+            });
+
+            if (fs.existsSync(file)) {
+                reply.header('Content-Type', 'image/png');
+                return fs.readFileSync(file);
+            }
+
+            throw new Error('Export failed');
         },
     },
 );
