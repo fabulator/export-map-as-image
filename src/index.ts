@@ -69,7 +69,7 @@ const tokenService = {
 };
 
 app.get<{ Params: { activityId: string; height: string; width: string }; Querystring: { urlTemplate?: string } }>(
-    '/activity/:activityId/width/:width/height/:height',
+    '/activity/:activityId/width/:width/height/:height.png',
     {
         handler: async (request, reply) => {
             const { activityId, height, width } = request.params;
