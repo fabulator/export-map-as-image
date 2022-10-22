@@ -3,3 +3,4 @@ dev.js
 *.png
 .idea
 .env
+fs

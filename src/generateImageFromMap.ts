@@ -14,7 +14,8 @@ export const generateImageFromMap = async (map: Map): Promise<Buffer> => {
                 reject(err);
                 return;
             }
-            const data = canvas.toDataURL().replace(/^data:image\/\w+;base64,/, '');
+
+            const data = canvas.toDataURL('image/png').replace(/^data:image\/\w+;base64,/, '');
             resolve(Buffer.from(data, 'base64'));
         });
     });

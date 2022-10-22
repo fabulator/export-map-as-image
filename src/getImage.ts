@@ -2,7 +2,11 @@ import { prepareDom } from './prepareDom';
 import { importLeaflet } from './importLeaflet';
 import { generateImageFromMap } from './generateImageFromMap';
 
-export const getImage = async (points: [number, number][], { width, height }: { height: number; width: number }) => {
+export const getImage = async (
+    points: [number, number][],
+    { width, height }: { height: number; width: number },
+    urlTemplate = 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}',
+) => {
     prepareDom();
     const { leaflet } = await importLeaflet();
 
@@ -18,7 +22,7 @@ export const getImage = async (points: [number, number][], { width, height }: { 
     // @ts-expect-error
     map._resetView(map.getCenter(), map.getZoom());
 
-    leaflet.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}').addTo(map);
+    leaflet.tileLayer(urlTemplate).addTo(map);
 
     leaflet.polyline(points, { color: 'white', smoothFactor: 1, weight: 5 }).addTo(map);
 
