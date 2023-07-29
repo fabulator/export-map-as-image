@@ -1,4 +1,4 @@
-FROM node:16-bullseye-slim AS build
+FROM node:18-bullseye-slim AS build
 
 WORKDIR /srv
 COPY package*.json /srv/
@@ -8,7 +8,7 @@ COPY src /srv/src/
 RUN npm run build
 RUN npm ci --production
 
-FROM node:16-bullseye-slim
+FROM node:18-bullseye-slim
 WORKDIR /srv
 COPY --from=build /srv/node_modules /srv/node_modules
 COPY --from=build /srv/dist /srv/
