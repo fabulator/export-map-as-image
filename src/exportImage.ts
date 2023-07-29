@@ -1,4 +1,3 @@
-import 'cross-fetch/polyfill';
 import fs from 'fs';
 import { Stream } from 'strava-api-handler';
 import { getImage } from './getImage';

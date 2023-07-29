@@ -1,10 +1,10 @@
 import path from 'path';
 import fs from 'fs';
+import { fork } from 'child_process';
 import { ApiScope } from 'strava-api-handler';
 import fastify from 'fastify';
 import { pino } from 'pino';
 import { config } from 'dotenv';
-import { fork } from 'child_process';
 import sanitize from 'sanitize-filename';
 import { api, tokenService } from './services';
 
@@ -25,7 +25,7 @@ app.get<{ Params: { activityId: string; height: string; width: string }; Queryst
             const { activityId, height, width } = request.params;
             const urlTemplate = request.query.urlTemplate || process.env.TEMPLATE;
 
-            const cacheKey = sanitize(`${activityId}${height}${width}${urlTemplate}`);
+            const cacheKey = sanitize(`${activityId}${height}${width}${urlTemplate || ''}`);
 
             const file = path.resolve(process.env.CACHE_DIRECTORY as string, `${cacheKey}.png`);
 
@@ -61,7 +61,7 @@ app.get<{ Params: { activityId: string; height: string; width: string }; Queryst
 );
 
 app.get('/strava/login', {
-    handler: async () => api.getLoginUrl(process.env.STRAVA_RETURN_URL as string, [ApiScope.ACTIVITY_READ_ALL]),
+    handler: () => api.getLoginUrl(process.env.STRAVA_RETURN_URL as string, [ApiScope.ACTIVITY_READ_ALL]),
 });
 
 app.get<{ Querystring: { code: string } }>('/strava/authorize', {

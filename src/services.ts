@@ -49,6 +49,6 @@ export const tokenService = {
         return token;
     },
     set: async (token: Token) => {
-        storage.set('token', token);
+        return storage.set('token', token);
     },
 };
