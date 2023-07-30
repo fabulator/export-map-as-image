@@ -1,11 +1,11 @@
 import path from 'path';
 import fs from 'fs';
 import { fork } from 'child_process';
+import crypto from 'crypto';
 import { ApiScope } from 'strava-api-handler';
 import fastify from 'fastify';
 import { pino } from 'pino';
 import { config } from 'dotenv';
-import sanitize from 'sanitize-filename';
 import { api, tokenService } from './services';
 
 config();
@@ -25,7 +25,10 @@ app.get<{ Params: { activityId: string; height: string; width: string }; Queryst
             const { activityId, height, width } = request.params;
             const urlTemplate = request.query.urlTemplate || process.env.TEMPLATE;
 
-            const cacheKey = sanitize(`${activityId}${height}${width}${urlTemplate || ''}`);
+            const cacheKey = crypto
+                .createHash('md5')
+                .update(`${activityId}${height}${width}${urlTemplate || ''}`)
+                .digest('hex');
 
             const file = path.resolve(process.env.CACHE_DIRECTORY as string, `${cacheKey}.png`);
 
