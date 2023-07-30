@@ -16,7 +16,7 @@ if (!process.env.STRAVA_RETURN_URL || !process.env.CACHE_DIRECTORY) {
 
 const logger = pino();
 
-export const app = fastify({ logger });
+export const app = fastify({ logger, maxParamLength: 200 });
 
 app.get<{ Params: { activityId: string; height: string; width: string }; Querystring: { urlTemplate?: string } }>(
     '/activity/:activityId/width/:width/height/:height.png',
