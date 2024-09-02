@@ -1,11 +1,12 @@
-import path from 'path';
-import fs from 'fs';
 import { fork } from 'child_process';
 import crypto from 'crypto';
-import { ApiScope } from 'strava-api-handler';
-import fastify from 'fastify';
-import { pino } from 'pino';
+import fs from 'fs';
+import path from 'path';
 import { config } from 'dotenv';
+import fastify from 'fastify';
+import { buildGPX, GarminBuilder } from 'gpx-builder';
+import { pino } from 'pino';
+import { ApiScope, Stream } from 'strava-api-handler';
 import { api, tokenService } from './services';
 
 config();
@@ -17,6 +18,49 @@ if (!process.env.STRAVA_RETURN_URL || !process.env.CACHE_DIRECTORY) {
 const logger = pino();
 
 export const app = fastify({ logger, maxParamLength: 200 });
+
+app.get<{ Params: { activityId: string; height: string; width: string }; Querystring: { urlTemplate?: string } }>('/export/:activityId', {
+    handler: async (request, reply) => {
+        const { activityId } = request.params;
+
+        const cacheKey = crypto.createHash('md5').update(`${activityId}`).digest('hex');
+
+        const file = path.resolve(process.env.CACHE_DIRECTORY as string, `${cacheKey}.gpx`);
+
+        if (fs.existsSync(file)) {
+            reply.header('Content-Disposition', 'attachment; filename=export.gpx');
+            reply.header('Content-Type', 'application/gpx+xml');
+            return fs.readFileSync(file);
+        }
+
+        const stream = (
+            await Promise.all(activityId.split(',').map((id) => api.getStream(Number(id), [Stream.LATNG, Stream.ALTITUDE])))
+        ).flat();
+
+        const { Point } = GarminBuilder.MODELS;
+
+        const gpxData = new GarminBuilder();
+
+        gpxData.setSegmentPoints(
+            stream.map(
+                (point) =>
+                    new Point(point.latlng[0], point.latlng[1], {
+                        ele: point.altitude,
+                    }),
+            ),
+        );
+
+        fs.writeFileSync(file, buildGPX(gpxData.toObject()));
+
+        if (fs.existsSync(file)) {
+            reply.header('Content-Disposition', 'attachment; filename=export.gpx');
+            reply.header('Content-Type', 'application/gpx+xml');
+            return fs.readFileSync(file);
+        }
+
+        throw new Error('Export failed');
+    },
+});
 
 app.get<{ Params: { activityId: string; height: string; width: string }; Querystring: { urlTemplate?: string } }>(
     '/activity/:activityId/width/:width/height/:height.png',
