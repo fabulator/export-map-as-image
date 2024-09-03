@@ -2,6 +2,7 @@ import { fork } from 'child_process';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import simplify from 'simplify-js';
 import { config } from 'dotenv';
 import fastify from 'fastify';
 import { buildGPX, GarminBuilder } from 'gpx-builder';
@@ -23,6 +24,11 @@ app.get<{ Params: { activityId: string; height: string; width: string }; Queryst
     handler: async (request, reply) => {
         const { activityId } = request.params;
 
+        const token = await tokenService.get();
+        if (token) {
+            api.setAccessToken(token.access_token);
+        }
+
         const cacheKey = crypto.createHash('md5').update(`${activityId}`).digest('hex');
 
         const file = path.resolve(process.env.CACHE_DIRECTORY as string, `${cacheKey}.gpx`);
@@ -37,14 +43,20 @@ app.get<{ Params: { activityId: string; height: string; width: string }; Queryst
             await Promise.all(activityId.split(',').map((id) => api.getStream(Number(id), [Stream.LATNG, Stream.ALTITUDE])))
         ).flat();
 
+        const data = stream.map(({ latlng, altitude }) => ({ x: latlng[0], y: latlng[1], altitude }));
+
+        const points = simplify(data, 0.0001);
+
         const { Point } = GarminBuilder.MODELS;
 
         const gpxData = new GarminBuilder();
 
         gpxData.setSegmentPoints(
-            stream.map(
+            points.map(
                 (point) =>
-                    new Point(point.latlng[0], point.latlng[1], {
+                    new Point(point.x, point.y, {
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore
                         ele: point.altitude,
                     }),
             ),
@@ -66,6 +78,11 @@ app.get<{ Params: { activityId: string; height: string; width: string }; Queryst
     '/activity/:activityId/width/:width/height/:height.png',
     {
         handler: async (request, reply) => {
+            const token = await tokenService.get();
+            if (token) {
+                api.setAccessToken(token.access_token);
+            }
+
             const { activityId, height, width } = request.params;
             const urlTemplate = request.query.urlTemplate || process.env.TEMPLATE;
 

@@ -13,6 +13,7 @@
     "leaflet-image": "^0.4.0",
     "luxon": "^3.3.0",
     "pino": "^8.14.2",
+    "simplify-js": "^1.2.4",
     "storage-keeper": "^3.8.8",
     "strava-api-handler": "^9.0.1"
   },
