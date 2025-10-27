@@ -8,7 +8,6 @@ export const prepareDom = () => {
 
     global.document = jsdom.window.document;
     global.window = jsdom.window;
-    global.navigator = global.window.navigator;
     global.Image = Image;
 
     global.L_DISABLE_3D = true;

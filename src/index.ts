@@ -1,13 +1,12 @@
 import { fork } from 'child_process';
 import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
-import simplify from 'simplify-js';
 import { config } from 'dotenv';
 import fastify from 'fastify';
-import { buildGPX, GarminBuilder } from 'gpx-builder';
+import fs from 'fs';
+import path from 'path';
 import { pino } from 'pino';
-import { ApiScope, Stream } from 'strava-api-handler';
+import { ApiScope } from 'strava-api-handler';
+import { getGpxFile } from './getGpxFile';
 import { api, tokenService } from './services';
 
 config();
@@ -18,59 +17,19 @@ if (!process.env.STRAVA_RETURN_URL || !process.env.CACHE_DIRECTORY) {
 
 const logger = pino();
 
+// @ts-expect-error Tohle řešit nebudu
 export const app = fastify({ logger, maxParamLength: 200 });
 
 app.get<{ Params: { activityId: string; height: string; width: string }; Querystring: { urlTemplate?: string } }>('/export/:activityId', {
     handler: async (request, reply) => {
         const { activityId } = request.params;
 
-        const token = await tokenService.get();
-        if (token) {
-            api.setAccessToken(token.access_token);
-        }
+        const file = getGpxFile(activityId);
 
-        const cacheKey = crypto.createHash('md5').update(`${activityId}`).digest('hex');
+        reply.header('Content-Disposition', 'attachment; filename=export.gpx');
+        reply.header('Content-Type', 'application/gpx+xml');
 
-        const file = path.resolve(process.env.CACHE_DIRECTORY as string, `${cacheKey}.gpx`);
-
-        if (fs.existsSync(file)) {
-            reply.header('Content-Disposition', 'attachment; filename=export.gpx');
-            reply.header('Content-Type', 'application/gpx+xml');
-            return fs.readFileSync(file);
-        }
-
-        const stream = (
-            await Promise.all(activityId.split(',').map((id) => api.getStream(Number(id), [Stream.LATNG, Stream.ALTITUDE])))
-        ).flat();
-
-        const data = stream.map(({ latlng, altitude }) => ({ x: latlng[0], y: latlng[1], altitude }));
-
-        const points = simplify(data, 0.0001);
-
-        const { Point } = GarminBuilder.MODELS;
-
-        const gpxData = new GarminBuilder();
-
-        gpxData.setSegmentPoints(
-            points.map(
-                (point) =>
-                    new Point(point.x, point.y, {
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        ele: point.altitude,
-                    }),
-            ),
-        );
-
-        fs.writeFileSync(file, buildGPX(gpxData.toObject()));
-
-        if (fs.existsSync(file)) {
-            reply.header('Content-Disposition', 'attachment; filename=export.gpx');
-            reply.header('Content-Type', 'application/gpx+xml');
-            return fs.readFileSync(file);
-        }
-
-        throw new Error('Export failed');
+        return file;
     },
 });
 

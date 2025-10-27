@@ -1,26 +1,21 @@
 import fs from 'fs';
-import { Stream } from 'strava-api-handler';
+import { _experimentalParseGpx } from 'gpx-builder';
 import { getImage } from './getImage';
-import { api, tokenService } from './services';
+import { getGpxFile } from './getGpxFile';
 
 (async () => {
-    const token = await tokenService.get();
-
-    if (!token) {
-        throw new Error('There is no token.');
-    }
-
-    api.setAccessToken(token.access_token);
-
     const [, , activityId, width, height, urlTemplate, file] = process.argv;
 
-    const stream = (await Promise.all(activityId.split(',').map((id) => api.getStream(Number(id), [Stream.LATNG])))).flat();
+    const gpxFile = await getGpxFile(activityId.split(','));
 
-    const image = await getImage(
-        stream.map(({ latlng }) => latlng),
-        { width: Number(width), height: Number(height) },
-        urlTemplate,
-    );
+    const data = fs.readFileSync(gpxFile, 'utf-8');
 
-    fs.writeFileSync(file, image);
+    const gpx = _experimentalParseGpx(data);
+
+    const points =
+        gpx.toObject().trk?.[0]?.trkseg?.[0]?.trkpt.map((pt) => [pt.attributes.lat, pt.attributes.lon] as [number, number]) || [];
+
+    const image = await getImage(points, { width: Number(width), height: Number(height) }, urlTemplate);
+
+    fs.writeFileSync(file, image as unknown as string);
 })();
