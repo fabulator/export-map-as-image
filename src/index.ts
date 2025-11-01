@@ -24,12 +24,12 @@ app.get<{ Params: { activityId: string; height: string; width: string }; Queryst
     handler: async (request, reply) => {
         const { activityId } = request.params;
 
-        const file = getGpxFile(activityId);
+        const file = await getGpxFile(activityId);
 
         reply.header('Content-Disposition', 'attachment; filename=export.gpx');
         reply.header('Content-Type', 'application/gpx+xml');
 
-        return file;
+        return fs.readFileSync(file);
     },
 });
 
